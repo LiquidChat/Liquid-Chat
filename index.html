@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<link rel="Icon" href="./img/New Project (21).png">
+<title>Liquid Chat</title>
+<style>
+  body { font-family: Arial; background: #272727; display: flex; justify-content: center; padding: 50px; color: #fff; }
+  #chat { width: 600px; background: #1c1c1c; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+  #messages { height: 700px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; }
+  .message { margin: 5px 0; padding: 8px 12px; border-radius: 12px; max-width: 70%; word-wrap: break-word; }
+  .user { background: #818181; color: #fff; align-self: flex-end; }
+  .bot { background: #1c1c1c; color: #fff; align-self: flex-start; }
+  #inputWrapper { display: flex; }
+  input { flex: 1; padding: 10px; border-radius: 8px; border: none; margin-right: 5px; }
+  button { font-size: 22px; font-weight: bold; width: 50px; border: none; border-radius: 30px; background: #fff; color: #000; cursor: pointer; }
+  button:hover { transition: 0.3s; background: #a0a0a0; }
+</style>
+</head>
+<body>
+<div id="chat">
+  <div id="messages"></div>
+  <div id="inputWrapper">
+    <input type="text" id="question" placeholder="Как могу помочь?" onkeydown="if(event.key==='Enter'){ask()}">
+    <button onclick="ask()">⬆</button>
+  </div>
+</div>
+
+<script>
+const responses = {
+  "Кто такой Вадим?": ["Пидор всем сосущий!😀, пиздит мать клюшкой, +1 хромосома - 2 отца, 42 братуха 42😎", "Вадим - не просто без мамное существо а и трех отцовое погребище😂, в вагину его матери вьежает несколько грузовиков, прям как в таможное оформление, 42 42 42.😎"],
+  "привет": ["Привет!", "Хай!","Ку! 😎"],
+  "салам": ["Хай!", "Здорово!","Ку! 😎"],
+  "здраствуй": ["Привет!", "Хай!","Ку! 😎"],
+  "добрый день": ["Привет!", "Хай!"],
+  "как дела": ["Отлично! а у тебя?", "Неплохо, а у тебя?", "Все супер! а у тебя?"],
+  "что делаешь": ["Отвечаю на твои вопросы!", "Мечтаю о виртуальном мире!"],
+  "помоги с кодом": ["Извини🙁, я пока не умею кодить, могу посоветовать АИ 😃⤵<br><br><hr><br><b>Chat GPT</b><br><br> <b>Что делает:</b> генерация кода, объяснение, исправление багов, помощь с документацией.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Может писать сразу готовые функции на разных языках.<br><br>◦ Объясняет непонятные фрагменты чужого кода.<br><br>◦ Генерирует тесты или примеры использования функций.<br><br><hr><br><b>DeepSeek</b><br><br> Что делает: глубокий поиск по документации, репозиториям, форумам, StackOverflow.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Быстро находит нужные библиотеки, функции или API.<br><br>◦ Помогает понять редкие или устаревшие методы.<br><br>◦ Можно искать сложные решения багов, которые редко встречаются.<br><br><hr><br><b>SuperNinja</b><br><br>Что делает:</> оптимизация и рефакторинг кода, советы по архитектуре.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Уменьшает дублирование кода.<br><br>◦ Предлагает более быстрые алгоритмы или структуры данных.<br><br>◦ Помогает писать “чистый код”, чтобы проект был поддерживаемым.<br><br><hr><br><b>Итог:</b><br><br><b>Chat GPT</b> — пишет код, объясняет.<br><br><b>DeepSeek</b> — ищет информацию глубже и точнее.<br><br><b>SuperNinja</b> — делает код лучше, быстрее, чище."],
+  "напиши код": ["Извини🙁, я пока не умею кодить, могу посоветовать АИ 😃⤵<br><br><hr><br><b>Chat GPT</b><br><br> <b>Что делает:</b> генерация кода, объяснение, исправление багов, помощь с документацией.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Может писать сразу готовые функции на разных языках.<br><br>◦ Объясняет непонятные фрагменты чужого кода.<br><br>◦ Генерирует тесты или примеры использования функций.<br><br><hr><br><b>DeepSeek</b><br><br> Что делает: глубокий поиск по документации, репозиториям, форумам, StackOverflow.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Быстро находит нужные библиотеки, функции или API.<br><br>◦ Помогает понять редкие или устаревшие методы.<br><br>◦ Можно искать сложные решения багов, которые редко встречаются.<br><br><hr><br><b>SuperNinja</b><br><br>Что делает:</> оптимизация и рефакторинг кода, советы по архитектуре.<br><br><b>Плюсы в кодинге:</b><br><br>◦ Уменьшает дублирование кода.<br><br>◦ Предлагает более быстрые алгоритмы или структуры данных.<br><br>◦ Помогает писать “чистый код”, чтобы проект был поддерживаемым.<br><br><hr><br><b>Итог:</b><br><br><b>Chat GPT</b> — пишет код, объясняет.<br><br><b>DeepSeek</b> — ищет информацию глубже и точнее.<br><br><b>SuperNinja</b> — делает код лучше, быстрее, чище."],
+  "ку": ["Ку! 😎", "Привет!"],
+  "отлично": ["Рад слышать! 😃 Что произошло интересного?", "Это отлично! 😃 С чем могу помочь?"]
+};
+
+let firstMessage = true;
+
+function levenshtein(a, b) {
+  const matrix = [];
+  for(let i=0; i<=b.length; i++){ matrix[i] = [i]; }
+  for(let j=0; j<=a.length; j++){ matrix[0][j] = j; }
+  for(let i=1; i<=b.length; i++){
+    for(let j=1; j<=a.length; j++){
+      if(b.charAt(i-1) === a.charAt(j-1)){
+        matrix[i][j] = matrix[i-1][j-1];
+      } else {
+        matrix[i][j] = Math.min(matrix[i-1][j-1]+1, matrix[i][j-1]+1, matrix[i-1][j]+1);
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+function isSimilar(input, key) {
+  return levenshtein(input, key) <= 2;
+}
+
+// Решение математических примеров
+// Решение математических примеров
+function solveMath(input) {
+  let cleanInput = input.toLowerCase().replace(/помоги|=|\?/g,'').replace(/\s+/g,'');
+  
+  // Проверяем, есть ли хотя бы один знак деления /
+  if (cleanInput.includes("/")) {
+    if(/^[0-9+\-*/.]+$/.test(cleanInput)){
+      try {
+        const result = eval(cleanInput);
+        if(!isNaN(result)) return cleanInput + " = " + result;
+      } catch(e){}
+    }
+    return "Скорее всего вы задали пример с делением, прошу пишите ЧИСЛО / ЧИСЛО, к примеру 10/5";
+  }
+
+  return null;
+}
+
+
+function ask() {
+  const input = document.getElementById("question");
+  const msg = input.value.trim();
+  if(!msg) return;
+
+  const messages = document.getElementById("messages");
+
+  // Сообщение пользователя
+  const userMessage = document.createElement("div");
+  userMessage.className = "message user";
+  userMessage.textContent = input.value;
+  messages.appendChild(userMessage);
+
+  let replies = [];
+  let handled = false;
+
+  // Проверка математического примера
+  const mathReply = solveMath(msg);
+  if(mathReply){
+    replies.push(mathReply);
+    handled = true;
+  }
+
+  // Проверка обычных фраз
+  if(!handled){
+    let matchedKey = null;
+    let reply = "Извини, я не понял 😅";
+    const msgLower = msg.toLowerCase();
+    for(let key in responses){
+      if(msgLower.includes(key) || isSimilar(msgLower,key)){
+        const options = responses[key];
+        reply = options[Math.floor(Math.random() * options.length)];
+        matchedKey = key;
+        break;
+      }
+    }
+
+    // Первый привет, если это первое сообщение и не содержит приветствия
+// Первый привет, если это первое сообщение и не содержит приветствия
+if(firstMessage){
+  const greetings = ["привет", "ку", "салам", "здравствуй", "здраствуй", "добрый день"];
+  const msgLower = msg.toLowerCase();
+
+  let isGreeting = greetings.some(g => msgLower.includes(g));
+
+  if(!isGreeting){
+    replies.unshift(Math.random() < 0.5 ? "Привет!" : "Ку! 😎");
+  }
+}
+
+
+    replies.push(reply);
+  }
+
+  firstMessage = false;
+  input.value = "";
+
+  // Индикатор печати
+  function typeMessage(text, callback) {
+    const botMessage = document.createElement("div");
+    botMessage.className = "message bot";
+    messages.appendChild(botMessage);
+
+    let dots = 0;
+    const typingIndicator = setInterval(()=>{
+      botMessage.textContent = "" + ".".repeat(dots%4);
+      dots++;
+      messages.scrollTop = messages.scrollHeight;
+    },100);
+
+    setTimeout(()=>{
+      clearInterval(typingIndicator);
+      let i=0;
+      const interval = setInterval(()=>{
+        botMessage.innerHTML = text.slice(0,i+1);
+        i++;
+        messages.scrollTop = messages.scrollHeight;
+        if(i===text.length) clearInterval(interval);
+        if(i===text.length && callback) callback();
+      },17);
+    },1000);
+  }
+
+  function sendReplies(index=0){
+    if(index<replies.length){
+      typeMessage(replies[index], ()=>sendReplies(index+1));
+    }
+  }
+
+  sendReplies();
+}
+</script>
+</body>
+</html>
