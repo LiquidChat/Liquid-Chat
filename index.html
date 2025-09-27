@@ -66,21 +66,109 @@ function isSimilar(input, key) {
 // Решение математических примеров
 // Решение математических примеров
 function solveMath(input) {
-  let cleanInput = input.toLowerCase().replace(/помоги|=|\?/g,'').replace(/\s+/g,'');
-  
-  // Проверяем, есть ли хотя бы один знак деления /
-  if (cleanInput.includes("/")) {
-    if(/^[0-9+\-*/.]+$/.test(cleanInput)){
+  let cleanInput = input
+    .toLowerCase()
+    .replace(/помоги|сколько|\?/g,'')
+    .replace(/\s+/g,'');
+
+  // --- Замена степеней в формате x² → x^2 ---
+  const superscripts = { "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
+  cleanInput = cleanInput.replace(/([a-z])([\u00B2-\u00B9])/g, (m, v, s) => v + "^" + superscripts[s]);
+
+  // --- Уравнения с переменной ---
+  if (cleanInput.includes("=")) {
+    let [left, right] = cleanInput.split("=");
+    if (!right) return null;
+
+    let match = cleanInput.match(/[a-z]/i);
+    if (match) {
+      let variable = match[0];
+      let equation = `(${left})-(${right})`;
+
       try {
-        const result = eval(cleanInput);
-        if(!isNaN(result)) return cleanInput + " = " + result;
+        let f0 = eval(equation.replace(new RegExp(variable,"g"),"(0)"));
+        let f1 = eval(equation.replace(new RegExp(variable,"g"),"(1)"));
+
+        let coeff = f1 - f0; 
+        let constTerm = f0;  
+
+        if (coeff === 0) {
+          return constTerm === 0 
+            ? "Бесконечно много решений"
+            : "Решений нет";
+        }
+
+        let solution = -constTerm / coeff;
+
+        // Пошаговое решение
+        let steps = [];
+        steps.push(`${left}=${right}`);
+        if (coeff === 1) {
+          steps.push(`${variable} = ${right}+${-constTerm}`);
+          steps.push(`${variable} = ${solution}`);
+        } else {
+          steps.push(`${coeff}${variable} = ${-constTerm}`);
+          steps.push(`${variable} = ${-constTerm}/${coeff}`);
+          steps.push(`${variable} = ${solution}`);
+        }
+        return steps.join("<br>");
       } catch(e){}
     }
-    return "Скорее всего вы задали пример с делением, прошу пишите ЧИСЛО / ЧИСЛО, к примеру 10/5";
+  }
+
+  // --- Упрощение выражений ---
+  if (/^[0-9a-z+\-*/^().]+$/.test(cleanInput)) {
+    try {
+      // 1) Упрощение подобного вида: 2x+3x-5x
+      if (/([0-9]*[a-z])/.test(cleanInput) && !/\*/.test(cleanInput)) {
+        let variable = cleanInput.match(/[a-z]/)[0];
+        let terms = cleanInput.split(/(?=[+-])/).map(t => {
+          if (t.includes(variable)) {
+            let num = t.replace(variable,"");
+            if (num === "" || num === "+") num = 1;
+            if (num === "-") num = -1;
+            return parseInt(num);
+          }
+          return NaN;
+        }).filter(x => !isNaN(x));
+
+        let sum = terms.reduce((a,b)=>a+b,0);
+        return `${cleanInput} = ${sum}${variable}`;
+      }
+
+      // 2) Умножение степеней с одинаковым основанием: x^2*x^3
+      if (/^([a-z])\^(\d+)\*\1\^(\d+)$/.test(cleanInput)) {
+        let [, variable, pow1, pow2] = cleanInput.match(/^([a-z])\^(\d+)\*\1\^(\d+)$/);
+        return `${cleanInput} = ${variable}^${parseInt(pow1)+parseInt(pow2)}`;
+      }
+
+      // 3) Специальный случай: 5x+5x
+      if (/^\d+[a-z]\+\d+[a-z]$/.test(cleanInput)) {
+        let num1 = parseInt(cleanInput.match(/^(\d+)/)[0]);
+        let num2 = parseInt(cleanInput.match(/\+(\d+)/)[1]);
+        let variable = cleanInput.match(/[a-z]/)[0];
+        return `${cleanInput} = ${(num1+num2)}${variable}`;
+      }
+
+      // 4) Случай x^5*x^5
+      if (/^([a-z])\^(\d+)\*\1\^\2$/.test(cleanInput)) {
+        let [, variable, pow] = cleanInput.match(/^([a-z])\^(\d+)\*\1\^\2$/);
+        return `${cleanInput} = ${variable}^${parseInt(pow)*2}`;
+      }
+
+      // 5) Обычные числовые примеры
+      const result = eval(cleanInput.replace(/\^/g,"**"));
+      if (!isNaN(result)) return cleanInput + " = " + result;
+    } catch(e){}
   }
 
   return null;
 }
+
+
+
+
+
 
 
 function ask() {
@@ -177,6 +265,3 @@ if(firstMessage){
 </script>
 </body>
 </html>
-
-
-
